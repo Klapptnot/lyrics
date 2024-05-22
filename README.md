@@ -8,24 +8,27 @@ This Rust CLI is your one-stop shop for finding lyrics and managing your Twitch 
 * Prefer a specific URL? Use `-u` or `--url` to grab lyrics from there instead 
 * Bad connection? Set a custom timeout for requests with `-t` or `--timeout` ⏱️
 * Need a few extra tries? Control retries with `-T` or `--tries` 
-* Got multiple lyric sources? Choose the URL you want with `-i` or `--url-index` 
+* Want data from other song? Choose the URL you want with `-a` or `--tip-url` 
 * Just the lyrics, please? Use `-l` or `--lyrics` to focus on the music 
 * Want to repeat the artist and track before each verse? `-r` or `--repeat` has you covered 
 * Feeling lost? Get help with all the options using `-h` or `--help` 
 
-* **Tag Your Tunes:** Organize your music library with song tagging, even for m3u playlists! ***(comming soon!)***
+## ***Coming soon!***
 
-### **Rock Your Twitch Stream (Coming Soon!)**
+### **Tag Your Tunes:**
 
-* **Twitch Radio:** Control stream music with the power of the Spotify API via a `lyrics.toml` config file ️
+Organize your music library with song tagging, even for m3u playlists!.
 
+### **Twitch Control:**
+
+Control stream music with the power of the Spotify API via a `lyrics.json`
   * **Command Central**
     * `!playlist`: Get the current queue playlist URL (remember, it's temporary!) 
     * `!song`: See the name, artist, Spotify URL, and a MusiXMatch link for the current song 
     * `!play {spotify_song_id}|{name artist song info}`: Add a song to the queue and get notified if it works! ➕
     * `!queue`: Peek at the next song in line 
     * `!lyr` (for the chosen few): Configure things on the fly
-      * `!lyr commands [+-]{command_name}`: Enable or disable specific commands (use `-name` to disable, `+name` to enable) ➕➖
+      * `!lyr commands [+-]{command_name}`: Enable or disable specific commands (use `+name` to enable, `-name` to disable) ➕➖
       * `!lyr queue [chat|host]`: Decide who can manage the queue (chat or host?) 
       * `!lyr prev/play/pause/next`: Control playback with ease (settings in `lyrics.toml`) ⏪⏯️⏩
       * `!lyr revert`: Oops! Remove the last song you added ⏪
