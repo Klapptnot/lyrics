@@ -1,7 +1,7 @@
 use crate::any::{
   macros,
   mxm::{MxmAPI, TrackInfo},
-  user_agents,
+  uagent,
 };
 use clap::Parser;
 use reqwest::header::HeaderMap;
@@ -41,7 +41,7 @@ struct Args {
   #[clap(short = 'U', long = "user-agent", default_value = None)]
   user_agent: Option<String>,
   ///Show URL found and ask user to select one
-  #[clap(short = 'a', long = "typ-url", default_value = "false")]
+  #[clap(short = 'a', long = "tip-url", default_value = "false")]
   typ_url: bool,
   ///Only print lyrics (With -r is a bit different)
   #[clap(short = 'l', long = "lyrics", default_value = "false")]
@@ -68,10 +68,7 @@ pub fn cli() {
 
   let mut headers = HeaderMap::new();
   if args.user_agent.is_none() {
-    headers.insert(
-      reqwest::header::USER_AGENT,
-      user_agents::random().parse().unwrap(),
-    );
+    headers.insert(reqwest::header::USER_AGENT, uagent::random().parse().unwrap());
   } else {
     headers.insert(
       reqwest::header::USER_AGENT,

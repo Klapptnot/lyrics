@@ -1,9 +1,7 @@
-mod clientry;
-mod macros;
-mod mxm;
-mod spinner;
-mod user_agents;
+mod any;
+mod bot;
+mod cli;
 
 fn main() {
-  clientry::cli()
+  cli::cli()
 }
