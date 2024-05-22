@@ -14,7 +14,7 @@ MELOC=$(
 # Check for both (debug or release) and select the most recent one
 if [ -f "${MELOC}/target/debug/${BIN_NAME}" ]; then
   LOC=debug
-elif [ -f "${MELOC}/target/release${BIN_NAME}" ]; then
+elif [ -f "${MELOC}/target/release/${BIN_NAME}" ]; then
   LOC=release
 else
   cargo build --release
