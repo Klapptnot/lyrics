@@ -185,7 +185,7 @@ impl MxmAPI {
 
     spinner.stop();
     let uti = urls_list.unwrap_or_else(|| {
-      macros::exit_err!("There are no items in the list");
+      macros::exit_err!("There are no results for this query");
     });
 
     let uti = uti.get(index).unwrap();
@@ -210,7 +210,7 @@ impl MxmAPI {
     spinner.stop();
 
     let uti = urls_list.unwrap_or_else(|| {
-      macros::exit_err!("There are no items in the list");
+      macros::exit_err!("There are no results for this query");
     });
 
     uti
