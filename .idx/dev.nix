@@ -35,6 +35,9 @@
       "vadimcn.vscode-lldb"
       "Catppuccin.catppuccin-vsc-icons"
       "miguelsolorio.fluent-icons"
+      "eamodio.gitlens"
+      "usernamehw.errorlens"
+      "Catppuccin.catppuccin-vsc"
     ];
 
     # Enable previews
@@ -65,6 +68,7 @@
       onStart = {
         # Example: start a background task to watch and re-build backend code
         # watch-backend = "npm run watch-backend";
+        update-rust-toolchain = "rustup update";
       };
     };
   };
