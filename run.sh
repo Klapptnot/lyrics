@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/env bash
 
 # To find the correct one (if you have set the binary name == folder name)
 # CMTDT_="$(cargo metadata --format-version 1)"; ETR_=$(basename $PWD); for ((i=0;; i++)); do if ! JQP_=$(jq -r ".packages[${i}].targets[0].name" <<<"${CMTDT_}"); then echo "JQ error"; break; fi; if [ "${JQP_}" == "${ETR_}" ]; then printf '\x1b[38;5;99mFound project "%s" in target %3d\n' "${ETR_}" "${i}"; break; else printf 'Item %3d %24s\n' "${i}" "${JQP_}" ; fi; [ "${JQP_}" == "null" ] && break; done; unset CMTDT_ ETR_ JQP_
