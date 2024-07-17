@@ -1,18 +1,14 @@
 use crate::any::macros;
 use std::io::{BufReader, Write};
 use std::net::TcpStream;
-use std::sync::mpsc::Sender;
-use std::thread;
 
 const TWITCH_IRC: &'static str = "irc.chat.twitch.tv:6667";
-const REQUEST_DELAY: u64 = 1000;
+// const REQUEST_DELAY: u64 = 1000;
 
 pub(crate) struct TwitchHandler {
   socket: TcpStream,
   channel: String,
   username: String,
-  handle: Option<thread::JoinHandle<()>>,
-  sender: Option<Sender<String>>,
 }
 
 impl TwitchHandler {
@@ -26,15 +22,13 @@ impl TwitchHandler {
       socket: socket.unwrap(),
       channel: channel,
       username: username,
-      handle: None,
-      sender: None,
     }
   }
 
   pub(crate) fn login(&mut self, token: String) -> &Self {
-    self.send_raw(format!("PASS: {}", token));
-    self.send_raw(format!("JOIN: #{}", self.channel));
-    self.send_raw(format!("NICK: {}", self.username));
+    self.send_raw(format!("PASS {}", token));
+    self.send_raw(format!("NICK {}", self.username));
+    self.send_raw(format!("JOIN #{}", self.channel));
 
     macros::log_ok!("Successfully authenticated and joined {}", self.channel);
 
