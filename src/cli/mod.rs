@@ -9,9 +9,8 @@ use std::io::{Read, Write};
 
 #[derive(Parser)]
 struct Args {
-  ///The search string to find the music
-  #[clap(short = 's', long = "search", default_value = None)]
-  keyword: Option<String>,
+  ///The search query to find the music
+  query: Vec<String>,
   ///Url to use instead of searching one
   #[clap(short = 'u', long = "url", default_value = None)]
   url: Option<String>,
@@ -56,10 +55,10 @@ pub fn cli() {
   let args = Args::parse();
 
   // Parse some command line arguments items as groups
-  if args.keyword.is_none() && args.url.is_none() {
-    macros::exit_err!("You must specify a url or keyword to get a url");
-  } else if !args.keyword.is_none() && !args.url.is_none() {
-    macros::exit_err!("Cannot specify a url and keyword at the same time");
+  if args.query.len() < 1 && args.url.is_none() {
+    macros::exit_err!("You must specify a url or query to get a url");
+  } else if !args.query.len() < 1 && !args.url.is_none() {
+    macros::exit_err!("Cannot specify a url and query at the same time");
   }
 
   if args.tries == 0 {
@@ -81,32 +80,41 @@ pub fn cli() {
 
   if !args.url.is_none() {
     track = mxm_api.get_from_url(&args.url.unwrap());
-  } else if !args.typ_url {
-    track = mxm_api.get_from_keywords(&args.keyword.unwrap(), args.url_index);
   } else {
-    let urls = mxm_api.get_keywords_options(&args.keyword.unwrap());
-    println!("\x1b[38;2;195;79;230mAvailable options are:\x1b[0m");
-    for i in 0..urls.len() {
-      println!(
+    let kwds = args
+      .query
+      .iter()
+      .map(|e| e.as_str())
+      .collect::<Vec<&str>>()
+      .join(" ");
+
+    if !args.typ_url {
+      track = mxm_api.get_from_keywords(&kwds, args.url_index);
+    } else {
+      let urls = mxm_api.get_keywords_options(&kwds);
+      println!("\x1b[38;2;195;79;230mAvailable options are:\x1b[0m");
+      for i in 0..urls.len() {
+        println!(
         "  {} \x1b[38;2;255;169;140m-> \x1b[38;2;255;232;184m{}\n    \x1b[38;2;195;79;230mAt: \x1b[38;2;189;147;249m{}\x1b[0m",
         i, urls[i].desc, urls[i].url
       );
+      }
+      print!("\x1b[38;2;195;79;230mSelect one from above:\x1b[0m ");
+      std::io::stdout().flush().unwrap();
+      let mut idx: [u8; 1] = [48];
+      std::io::stdin()
+        .read_exact(&mut idx)
+        .expect("Could not read the input");
+
+      // Ascii(48-57) == Ordinal(0-9)
+      if idx[0] > 57 || idx[0] < 48 {
+        macros::exit_err!("Invalid input, select a number");
+      }
+
+      let idx: usize = (idx[0] - 48) as usize;
+
+      track = mxm_api.get_from_url(&urls[idx].url);
     }
-    print!("\x1b[38;2;195;79;230mSelect one from above:\x1b[0m ");
-    std::io::stdout().flush().unwrap();
-    let mut idx: [u8; 1] = [48];
-    std::io::stdin()
-      .read_exact(&mut idx)
-      .expect("Could not read the input");
-
-    // Ascii(48-57) == Ordinal(0-9)
-    if idx[0] > 57 || idx[0] < 48 {
-      macros::exit_err!("Invalid input, select a number");
-    }
-
-    let idx: usize = (idx[0] - 48) as usize;
-
-    track = mxm_api.get_from_url(&urls[idx].url);
   }
 
   // let track = TrackInfo::from(crate::dummy::get_json()).unwrap_or_else(|| macros::exit_err("Not able to get TrackInfo"));
