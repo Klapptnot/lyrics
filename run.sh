@@ -31,7 +31,7 @@ fi
 BIN="${MELOC}/target/${LOC}/${BIN_NAME}"
 
 # Start bot or gui mode based on arguments (needed coreutils >= 9.5)
-if [ "${1}" =~ ^--(bot|gui)$ ]; then
+if [[ "${1}" =~ ^--(bot|gui)$ ]]; then
   env --argv0="lyr${1#--}" ${BIN} "${@:2}"
   exit
 fi
