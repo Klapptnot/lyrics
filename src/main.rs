@@ -13,8 +13,8 @@ fn main() {
     .to_string();
 
   match exec_name.as_str() {
-    "lyrbot" => println!("Sorry, feature not implemented yet\n"),
-    "lyrgui" => println!("Sorry, feature not implemented yet\n"),
+    "lyrbot" => println!("Sorry, feature not implemented yet"),
+    "lyrgui" => println!("Sorry, feature not implemented yet"),
     _ => cli::cli(),
   }
 }
