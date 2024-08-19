@@ -84,7 +84,7 @@ pub(crate) fn parse_message<'a>(message: &'a str) -> TwitchIrcMsg<'a> {
     ""
   };
   // Parse command
-  // Example: "PRIVMSG"
+  // Example: "PRIVMSG #channel :!test"
   let command = parts.next().unwrap_or("");
 
   // Parse remaining part of the message

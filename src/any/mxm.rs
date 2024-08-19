@@ -154,7 +154,7 @@ impl MxmAPI {
         mxm_json = Some(json_str);
         break;
       } else {
-        spinner.update(format!("Getting song data ({} try)", i));
+        spinner.update(format!("Getting song data ({} try)", i + 1));
       }
     }
 
@@ -179,7 +179,7 @@ impl MxmAPI {
         urls_list = Some(val);
         break;
       } else {
-        spinner.update(format!("Getting url to musixmatch ({} try)", i));
+        spinner.update(format!("Getting url to musixmatch ({} try)", i + 1));
       }
     }
 
@@ -203,7 +203,7 @@ impl MxmAPI {
         urls_list = Some(val);
         break;
       } else {
-        spinner.update(format!("Getting url to musixmatch ({} try)", i));
+        spinner.update(format!("Getting url to musixmatch ({} try)", i + 1));
       }
     }
 
