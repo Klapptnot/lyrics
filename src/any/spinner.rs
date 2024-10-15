@@ -47,7 +47,7 @@ impl Spinner {
         thread::sleep(std::time::Duration::from_millis(80 as u64));
       }
       // Go to line start, delete from cursor to end, set cursor visible
-      print!("\x1b[0K\x1b[?25l");
+      print!("\x1b[0K\x1b[?25h");
     }));
     self.channel = Some(emtr);
     self
