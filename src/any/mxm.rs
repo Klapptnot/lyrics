@@ -110,19 +110,24 @@ impl TrackInfo {
         .unwrap_or("Unespecified")
         .into(),
         cover: Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["coverImage"])
-          .unwrap()
+          .unwrap_or("Unespecified")
           .into(),
         released: Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["releaseDate"])
           .unwrap_or("0000-00-00")[0..10]
           .into(),
-        spotify: format!(
-          "https://open.spotify.com/track/{}",
-          Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["spotifyId"]).unwrap()
-        ),
-        musixmatch: format!(
-          "https://musixmatch.com/lyrics/{}",
-          Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["vanityId"]).unwrap()
-        ),
+        spotify: if let Some(s) = Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["spotifyId"])
+        {
+          format!("https://open.spotify.com/track/{s}")
+        } else {
+          "Missing Spotify music ID".to_string()
+        },
+        musixmatch: if let Some(s) =
+          Value::as_str(&data["props"]["pageProps"]["data"]["trackInfo"]["data"]["track"]["vanityId"])
+        {
+          format!("https://musixmatch.com/lyrics/{s}")
+        } else {
+          "Missing Musixmatch ID".to_string()
+        },
       });
     }
     return None;
@@ -133,6 +138,12 @@ pub struct MxmAPI {
   tries: u32,
   timeout: u32,
   headers: Option<HeaderMap>,
+}
+
+pub enum ResponseErr {
+  Captcha(String),
+  NoEnoughData,
+  RequestErr,
 }
 
 impl MxmAPI {
@@ -149,7 +160,7 @@ impl MxmAPI {
     let mut spinner = Spinner::new();
     spinner.start("Getting song data".into());
 
-    for i in 1..self.tries {
+    for i in 1..=self.tries {
       if let Ok(json_str) = get_json(&url, self.timeout, self.headers.clone()) {
         mxm_json = Some(json_str);
         break;
@@ -169,46 +180,34 @@ impl MxmAPI {
     track
   }
 
-  pub fn get_from_keywords(&self, keyword: &String, index: usize) -> TrackInfo {
-    let mut spinner = Spinner::new();
-    spinner.start("Getting url to musixmatch".into());
-
-    let mut urls_list: Option<Vec<TrackItem>> = None;
-    for i in 1..self.tries {
-      if let Ok(val) = get_urls(&keyword, self.timeout, self.headers.clone()) {
-        urls_list = Some(val);
-        break;
-      } else {
-        spinner.update(format!("Getting url to musixmatch ({} try)", i + 1));
-      }
-    }
-
-    spinner.stop();
-    let uti = urls_list.unwrap_or_else(|| {
-      macros::exit_err!("There are no results for this query");
-    });
-
+  pub fn get_track_info(&self, keyword: &String, index: usize) -> TrackInfo {
+    let uti = self.get_possible_links(keyword);
     let uti = uti.get(index).unwrap();
 
     MxmAPI::get_from_url(&self, &uti.url)
   }
 
-  pub fn get_keywords_options(&self, keyword: &String) -> Vec<TrackItem> {
+  pub fn get_possible_links(&self, keyword: &String) -> Vec<TrackItem> {
     let mut spinner = Spinner::new();
     spinner.start("Getting url to musixmatch".into());
 
     let mut urls_list: Option<Vec<TrackItem>> = None;
-    for i in 1..self.tries {
-      if let Ok(val) = get_urls(&keyword, self.timeout, self.headers.clone()) {
-        urls_list = Some(val);
-        break;
-      } else {
-        spinner.update(format!("Getting url to musixmatch ({} try)", i + 1));
+    for i in 1..=self.tries {
+      match get_urls(&keyword, self.timeout, self.headers.clone()) {
+        Ok(val) => {
+          urls_list = Some(val);
+          break;
+        }
+        Err(ResponseErr::Captcha(e)) => {
+          macros::exit_err!("{e}");
+        },
+        _ => {
+          spinner.update(format!("Getting url to musixmatch ({} try)", i + 1));
+        }
       }
     }
 
     spinner.stop();
-
     let uti = urls_list.unwrap_or_else(|| {
       macros::exit_err!("There are no results for this query");
     });
@@ -217,10 +216,10 @@ impl MxmAPI {
   }
 }
 
-pub fn get_urls(keyword: &String, timeout: u32, headers_map: Option<HeaderMap>) -> Result<Vec<TrackItem>, String> {
+pub fn get_urls(keyword: &String, timeout: u32, headers_map: Option<HeaderMap>) -> Result<Vec<TrackItem>, ResponseErr> {
   let url = reqwest::Url::parse(
     format!(
-      "https://www.google.com/search?q=site%3Amusixmatch.com%2Flyrics+lyrics+{}",
+      "https://www.google.com/search?q=site%3Amusixmatch.com%2Flyrics%20lyrics%20{}",
       keyword
     )
     .as_str(),
@@ -234,9 +233,15 @@ pub fn get_urls(keyword: &String, timeout: u32, headers_map: Option<HeaderMap>) 
 
   let res = client.send();
   let response = match res {
-    Err(err) => return Err(format!("Something went wrong: {}", err)),
     Ok(data) => data.text().unwrap(),
+    Err(_) => {
+      return Err(ResponseErr::RequestErr)
+    }
   };
+
+  if response.contains(r#"<script src="https://www.google.com/recaptcha/api.js" async defer></script>"#) {
+    return Err(ResponseErr::Captcha("Server is not giving data back".into()));
+  }
 
   let url_list: Vec<String> = Regex::new(r#"(?<=><a jsname="UWckNb" href=")[^ ]*(?=")"#)
     .unwrap()
@@ -245,7 +250,7 @@ pub fn get_urls(keyword: &String, timeout: u32, headers_map: Option<HeaderMap>) 
     .collect();
 
   if url_list.len() == 0 {
-    return Err("No enough data".into());
+    return Err(ResponseErr::NoEnoughData);
   }
 
   let url_desc: Vec<String> = Regex::new(r#"(?<=<br><h3 class="LC20lb MBeuO DKV0Md">)[^<]*(?=<)"#)

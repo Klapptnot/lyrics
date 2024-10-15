@@ -89,9 +89,9 @@ pub fn cli() {
       .join(" ");
 
     if !args.typ_url {
-      track = mxm_api.get_from_keywords(&kwds, args.url_index);
+      track = mxm_api.get_track_info(&kwds, args.url_index);
     } else {
-      let urls = mxm_api.get_keywords_options(&kwds);
+      let urls = mxm_api.get_possible_links(&kwds);
       println!("\x1b[38;2;195;79;230mAvailable options are:\x1b[0m");
       for i in 0..urls.len() {
         println!(
