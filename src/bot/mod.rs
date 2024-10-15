@@ -1,5 +1,6 @@
 mod irc;
 mod twitch;
+mod config;
 // mod spotify;
 
 use crate::any::macros;
