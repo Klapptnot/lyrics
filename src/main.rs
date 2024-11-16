@@ -1,5 +1,6 @@
 mod any;
 mod cli;
+mod bot;
 
 fn main() {
   let exec_name: String = std::env::args()

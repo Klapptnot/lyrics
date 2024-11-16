@@ -5,14 +5,14 @@ use std::net::TcpStream;
 const TWITCH_IRC: &'static str = "irc.chat.twitch.tv:6667";
 // const REQUEST_DELAY: u64 = 1000;
 
-pub(crate) struct TwitchHandler {
-  socket: TcpStream,
-  channel: String,
-  username: String,
+pub(crate) struct TwitchHandler<'a> {
+  pub(crate) socket: TcpStream,
+  channel: &'a str,
+  username: &'a str,
 }
 
-impl TwitchHandler {
-  pub(crate) fn new(channel: String, username: String) -> Self {
+impl<'a> TwitchHandler<'a> {
+  pub(crate) fn new(channel: &'a str, username: &'a str) -> Self {
     let socket = TcpStream::connect(TWITCH_IRC);
     if let Err(e) = socket {
       macros::exit_err!("There was a failure trying to connect to Twitch: {}", e);
@@ -20,17 +20,15 @@ impl TwitchHandler {
 
     Self {
       socket: socket.unwrap(),
-      channel: channel,
-      username: username,
+      channel,
+      username,
     }
   }
 
-  pub(crate) fn login(&mut self, token: String) -> &Self {
+  pub(crate) fn login(&mut self, token: &str) -> &Self {
     self.send_raw(format!("PASS {}", token));
     self.send_raw(format!("NICK {}", self.username));
     self.send_raw(format!("JOIN #{}", self.channel));
-
-    macros::log_ok!("Successfully authenticated and joined {}", self.channel);
 
     self
   }
@@ -51,7 +49,7 @@ impl TwitchHandler {
   }
 }
 
-fn socket_send_raw(socket: &mut TcpStream, data: String) -> () {
+pub(crate) fn socket_send_raw(socket: &mut TcpStream, data: String) -> () {
   let data = format!("{data}\r\n");
   let write = socket.write(data.as_bytes());
   if let Err(e) = write {

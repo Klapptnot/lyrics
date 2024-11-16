@@ -35,6 +35,10 @@ pub(crate) enum TwitchIrcMsg<'a> {
   USERSTATE(IrcInfo<'a>),
   /// Sent when someone sends your bot a whisper message
   WHISPER(IrcInfo<'a>),
+  // Joined to a channel
+  JOIN,
+  // Ping: keep alive message
+  PING,
   /// Nothing
   NOTHING,
 }
@@ -54,19 +58,17 @@ fn parse_tags<'a>(tags: &'a str) -> IrcTagsMap<'a> {
 
 pub(crate) fn parse_message<'a>(message: &'a str) -> TwitchIrcMsg<'a> {
   macros::log_inf!("message received {}", message);
-  // Split into tags and the rest
-  // Example: "@badge-info=;badges=broadcaster/1,... :tmi.twitch.tv PRIVMSG #channel :!test"
-  let mut parts = message.splitn(2, ' ');
 
+  // Example: "@badge-info=;badges=broadcaster/1,... :tmi.twitch.tv PRIVMSG #channel :!test"
   // Parse tags if present
-  let tags_part = parts.next().unwrap();
-  let tags = if tags_part.starts_with('@') {
-    parse_tags(&tags_part[1..])
+  let (tags, rest) = if message.starts_with('@') {
+    let mut parts = message.splitn(2, ' ');
+    let tags_part = parts.next().unwrap();
+    (parse_tags(&tags_part[1..]), parts.next().unwrap_or(""))
   } else {
-    HashMap::new()
+    (HashMap::new(), message)
   };
 
-  let rest = parts.next().unwrap_or("");
   // Split into prefix (user), command, and the remaining part
   // Example: ":tmi.twitch.tv PRIVMSG #channel :!test"
   let mut parts = rest.splitn(3, ' ');
@@ -93,13 +95,9 @@ pub(crate) fn parse_message<'a>(message: &'a str) -> TwitchIrcMsg<'a> {
 
   // Parse host and text from remaining part
   // Example: ("channel", "!test")
-  let (host, text) = match remaining.splitn(2, ' ').next().and_then(|part| {
-    let it = &part.splitn(2, ' ').collect::<Vec<&str>>();
-    Some((it[0].trim_end_matches('#'), it[1].trim_start_matches(':')))
-  }) {
-    Some((host, text)) => (host, text),
-    _ => ("", ""),
-  };
+  let mut remaining = remaining.splitn(2, ' ');
+  let host = remaining.next().unwrap_or("#").trim_start_matches('#');
+  let text = remaining.next().unwrap_or(":").trim_start_matches(':');
 
   let irc_info = IrcInfo {
     user,
@@ -119,6 +117,9 @@ pub(crate) fn parse_message<'a>(message: &'a str) -> TwitchIrcMsg<'a> {
     "USERNOTICE" => TwitchIrcMsg::USERNOTICE(irc_info),
     "USERSTATE" => TwitchIrcMsg::USERSTATE(irc_info),
     "WHISPER" => TwitchIrcMsg::WHISPER(irc_info),
+    "JOIN" => TwitchIrcMsg::JOIN,
+    "PING" => TwitchIrcMsg::PING,
     _ => TwitchIrcMsg::NOTHING,
   }
 }
+

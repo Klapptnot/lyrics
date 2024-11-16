@@ -300,7 +300,9 @@ fn get_json(url: &String, timeout: u32, headers_map: Option<HeaderMap>) -> Resul
     Ok(data) => data,
   };
 
-  let response = response.text().unwrap();
+  let response = response.text().unwrap_or_else(|e| {
+    macros::exit_err!("Could not get response content: {e}");
+  });
   let json_res = Regex::new(r#"(?<=<script id="__NEXT_DATA__" type=\"application/json">).*(?=</script>)"#)
     .unwrap()
     .find(response.as_str())

@@ -45,6 +45,9 @@ struct Args {
   ///Only print lyrics (With -r is a bit different)
   #[clap(short = 'l', long = "lyrics", default_value = "false")]
   only_lyrics: bool,
+  ///Show album cover art (prefer using a terminal with image support)
+  #[clap(short = 'c', long = "cover-art", default_value = "false")]
+  show_cover: bool,
   ///Print <Track name> - <Artist> before printing lyrics
   #[clap(short = 'r', long = "repeat", default_value = "false")]
   repeat: bool,
@@ -134,16 +137,43 @@ pub fn cli() {
     std::process::exit(0);
   }
 
+  let keyc = "\x1b[38;2;255;169;140m";
+  let valc = "\x1b[38;2;255;232;184m";
+  let img_pad = if args.show_cover { 16 } else { 0 };
+
   // Defaults to all relevant info
-  print!(
-    "\x1b[38;2;255;169;140mTITLE     : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mARTIST    : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mALBUM     : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mGENRE     : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mRELEASED  : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mSPOTIFY   : \x1b[38;2;255;232;184m{}\n\x1b[38;2;255;169;140mMUSIXMATCH: \x1b[38;2;255;232;184m{}\n\n\x1b[38;2;255;169;140mLYRICS\x1b[0m\n\n",
-    track.name, track.artist, track.album, track.genre, track.released, track.spotify, track.musixmatch
-  );
+  println!("{:img_pad$}{keyc}TITLE     : {valc}{}", "", track.name);
+  println!("{:img_pad$}{keyc}ARTIST    : {valc}{}", "", track.artist);
+  println!("{:img_pad$}{keyc}ALBUM     : {valc}{}", "", track.album);
+  println!("{:img_pad$}{keyc}GENRE     : {valc}{}", "", track.genre);
+  println!("{:img_pad$}{keyc}RELEASED  : {valc}{}", "", track.released);
+  println!("{:img_pad$}{keyc}SPOTIFY   : {valc}{}", "", track.spotify);
+  println!("{:img_pad$}{keyc}MUSIXMATCH: {valc}{}", "", track.musixmatch);
+
+  if args.show_cover {
+    let conf = viuer::Config {
+      x: 0,
+      y: -7,
+      restore_cursor: true,
+      absolute_offset: false,
+      width: Some(15),
+      height: Some(7),
+      ..Default::default()
+    };
+
+    let response = reqwest::blocking::get(track.cover).expect("get album cover art");
+    let bytes = response.bytes().expect("get response bytes");
+    let img = image::load_from_memory(&bytes).expect("decode image");
+
+    viuer::print(&img, &conf).expect("print image");
+  }
 
   if !track.has_lyrics {
-    print!("Lyrics are not available :(");
+    print!("\nLyrics are not available :(");
     std::process::exit(0);
   }
+
+  print!("\n{keyc}LYRICS\x1b[0m\n\n");
 
   if !track.has_lyrics_struct {
     print!("{}\n\nCopyright -> {}\n", track.lyrics, track.lyrics_copyright);
